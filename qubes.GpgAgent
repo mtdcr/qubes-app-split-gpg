@@ -1,0 +1,20 @@
+#!/bin/sh
+
+TIMEOUT=10
+
+gpg_agent() {
+  local homedir=$1
+  local msg=$2
+
+  notify-send "$msg" --expire-time=1000 </dev/null >/dev/null 2>/dev/null &
+  timeout --foreground "$TIMEOUT" gpg-agent --homedir "$homedir" --server --disable-scdaemon --no-allow-external-cache --no-allow-mark-trusted --no-allow-loopback-pinentry 2>/dev/null
+}
+
+gpghome="$HOME/gnupg/$QREXEC_REMOTE_DOMAIN"
+if [ -d "$gpghome" ]; then
+  gpg_agent "$gpghome" "Keyring access from domain: $QREXEC_REMOTE_DOMAIN"
+else
+  tempdir=$(mktemp -d)
+  gpg_agent "$tempdir" "Access to empty keyring from domain: $QREXEC_REMOTE_DOMAIN"
+  rm -rf "$tempdir"
+fi

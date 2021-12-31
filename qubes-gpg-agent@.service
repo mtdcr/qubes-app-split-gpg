@@ -1,0 +1,8 @@
+[Unit]
+Description=Split-GPG agent
+Requires=%p.socket
+
+[Service]
+Environment=VAULT_VM=gpg-vault
+ExecStart=/bin/sh -c '[ -f /rw/config/gpg-vault ] && VAULT_VM=$(cat /rw/config/gpg-vault); exec /usr/bin/qrexec-client-vm "$VAULT_VM" qubes.GpgAgent'
+StandardInput=socket
