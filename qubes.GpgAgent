@@ -1,20 +1,90 @@
 #!/bin/sh
+# Inspired by: https://github.com/QubesOS/qubes-app-linux-split-gpg/
 
+
+#####
+#TODO Choose how long in seconds gpg requests are auto accepted
+#     If you want to disable confirmation completely assign a negative number (-1)
+#####
+# Make auto-accept opt-in
+if [ -z "$QUBES_GPG_AUTOACCEPT" ]; then
+    QUBES_GPG_AUTOACCEPT=0
+fi
+
+# Only change if you run into timeouts
 TIMEOUT=10
 
-gpg_agent() {
-  local homedir=$1
-  local msg=$2
+gpghome="$HOME/gnupg/$QREXEC_REMOTE_DOMAIN"
 
-  notify-send "$msg" --expire-time=1000 </dev/null >/dev/null 2>/dev/null &
-  timeout --foreground "$TIMEOUT" gpg-agent --homedir "$homedir" --server --disable-scdaemon --no-allow-external-cache --no-allow-mark-trusted --no-allow-loopback-pinentry 2>/dev/null
+#Add correct units to duration for printing
+unit() {
+    case "$1" in
+        0s);;
+        1s) echo " 1 second";;
+        *s) echo " ${1%s} seconds";;
+        0m);;
+        1m) echo " 1 minute";;
+        *m) echo " ${1%m} minutes";;
+        0h);;
+        1h) echo " 1 hour";;
+        *h) echo " ${1%h} hours";;
+        0d);;
+        1d) echo " 1 day";;
+        *d) echo " ${1%d} days";;
+    esac
 }
 
-gpghome="$HOME/gnupg/$QREXEC_REMOTE_DOMAIN"
-if [ -d "$gpghome" ]; then
-  gpg_agent "$gpghome" "Keyring access from domain: $QREXEC_REMOTE_DOMAIN"
-else
-  tempdir=$(mktemp -d)
-  gpg_agent "$tempdir" "Access to empty keyring from domain: $QREXEC_REMOTE_DOMAIN"
-  rm -rf "$tempdir"
+gpg_agent() {
+    local homedir=$1
+    local msg=$2
+    
+    notify-send "$msg" --expire-time=1000 </dev/null >/dev/null 2>/dev/null &
+    timeout --foreground "$TIMEOUT" gpg-agent --homedir "$homedir" --server --disable-scdaemon --no-allow-external-cache --no-allow-mark-trusted --no-allow-loopback-pinentry 2>/dev/null
+}
+
+is_auto_accept_enabled() {
+    [ "$QUBES_GPG_AUTOACCEPT" -ge 0 ]
+}
+
+confirmation_dialog() {
+    # Ensure the vault VM is fully started
+    echo "$USER" | /etc/qubes-rpc/qubes.WaitForSession >/dev/null 2>/dev/null
+    
+    msg_text="Allow Qube '$QREXEC_REMOTE_DOMAIN' to access your GPG keys?"
+    
+    if [ "$QUBES_GPG_AUTOACCEPT" -gt 0 ]; then
+        # If there is a grace period, remind the user
+        days="$(( $QUBES_GPG_AUTOACCEPT / (3600*24) ))d";
+        hours="$(( ( $QUBES_GPG_AUTOACCEPT % (3600*24) ) / 3600 ))h";
+        minutes="$(( ( $QUBES_GPG_AUTOACCEPT % 3600 ) / 60 ))m";
+        seconds="$(( $QUBES_GPG_AUTOACCEPT % 60 ))s";
+        msg_text="$msg_text\n(Grant unlimited access for $(unit $days)$(unit $hours)$(unit $minutes)$(unit $seconds))?"
+    fi
+    
+    zenity --question --no-wrap --text "$msg_text" 2>/dev/null </dev/null >/dev/null || exit 1
+    touch "$stat_file" || echo "File could not be modified. Grace period will be ignored." >&2 || true
+}
+
+is_confirmation_needed() {
+    stat_file="$gpghome/stat.$QREXEC_REMOTE_DOMAIN"
+    stat_time=$(stat -c %Y "$stat_file" 2>/dev/null || echo 0)
+    now=$(date +%s)
+    
+    # Still in grace period?
+    [ $(($stat_time + $QUBES_GPG_AUTOACCEPT)) -lt "$now" ]
+}
+
+if is_auto_accept_enabled; then
+    if is_confirmation_needed; then
+        confirmation_dialog
+    fi
 fi
+
+if [ -d "$gpghome" ]; then
+    gpg_agent "$gpghome" "Keyring access from domain: $QREXEC_REMOTE_DOMAIN"
+else
+    tempdir=$(mktemp -d)
+    gpg_agent "$tempdir" "Access to empty keyring from domain: $QREXEC_REMOTE_DOMAIN"
+    rm -rf "$tempdir"
+fi
+
