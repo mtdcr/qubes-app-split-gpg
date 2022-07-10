@@ -1,1 +1,1 @@
-qubes.GpgAgent     *     @tag:gpg-client      gpg-vault    ask   default_target=gpg-vault
+qubes.GpgAgent     *     @anyvm      gpg-vault    ask   default_target=gpg-vault

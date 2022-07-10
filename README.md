@@ -39,10 +39,6 @@ Copy files from this repository to various destinations (VM is the first argumen
 
 * Copy `qubes.GpgAgent.policy` to `/etc/qubes-rpc/policy/qubes.GpgAgent`
 * Copy `35-split-gpg.policy` to `/etc/qubes/policy.d/35-split-gpg.policy`
-* Add the `gpg-client` tag to all AppVMs that are allowed to use the gpg vault. *(If you have multiple vaults it might be beneficial to introduce multiple tags as well.)*
-```bash
-  qvm-tags <AppVmName> add gpg-client
-```
 
 ### TemplateVM for GPG-vault
 
