@@ -48,6 +48,10 @@ Copy files from this repository to various destinations (VM is the first argumen
 - AppVM (optional):
 
   * Put the name of your GPG-vault into `/rw/config/gpg-vault` (default: "gpg-vault"). Remember adjusting the policy in Dom0 for non-default names.
+  * Configure how long after a confirmation requests are auto-accepted. Set `QUBES_GPG_AUTOACCEPT` to the desired duration in seconds. -1 turns off confirmation completely.
+      ```bash
+      echo "export QUBES_GPG_AUTOACCEPT=86400" >> ~/.profile
+      ```
   * Restart your AppVM.
 
 ## Troubleshooting
