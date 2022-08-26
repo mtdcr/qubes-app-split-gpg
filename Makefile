@@ -8,6 +8,9 @@ install-vault:
 	install -m 755 qubes.GpgAgent $(DESTDIR)/etc/qubes-rpc/
 
 install-dom0:
+	install -D -m 0664 35-split-gpg.policy $(DESTDIR)/etc/qubes/policy.d/qubes.GpgAgent
+
+install-dom0-legacy:
 	install -D -m 0664 qubes.GpgAgent.policy $(DESTDIR)/etc/qubes-rpc/policy/qubes.GpgAgent
 
-install: install-client install-vault install-dom0
+install: install-client install-vault install-dom0 install-dom0-legacy
