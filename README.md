@@ -37,8 +37,8 @@ Copy files from this repository to various destinations (VM is the first argumen
 
 ### Dom0
 
-* Copy `qubes.GpgAgent.policy` to `/etc/qubes-rpc/policy/qubes.GpgAgent`
-* Copy `35-split-gpg.policy` to `/etc/qubes/policy.d/35-split-gpg.policy`
+* On Qubes 4.1 or newer, copy `35-split-gpg.policy` to `/etc/qubes/policy.d/35-split-gpg.policy`
+* On older Qubes, copy `qubes.GpgAgent.policy` to `/etc/qubes-rpc/policy/qubes.GpgAgent`
 
 ### TemplateVM for GPG-vault
 
